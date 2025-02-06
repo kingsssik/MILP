@@ -354,6 +354,55 @@ class Milp
             }
 
 
+            if (cplex.Solve())
+{
+    Console.WriteLine("---------------------------------------------------");
+    Console.WriteLine("Solution status = " + cplex.GetStatus());
+    Console.WriteLine($"Objective Value (Sum of T_j) = {cplex.ObjValue}");
+    Console.WriteLine("---------------------------------------------------");
+
+    // 예시: T_j, C_j,l 출력
+    for (int j = 1; j <= n; j++)
+    {
+        Console.WriteLine($"T_{j} = {cplex.GetValue(T_j[j])}");
+        for (int l = 1; l <= r[j]; l++)
+        {
+            Console.WriteLine($"   C_{j},{l} = {cplex.GetValue(C_jl[j][l])}");
+        }
+    }
+
+    // 예시: X_jlhzi 중 1인 것만 출력
+    // (실제로는 아주 많을 수 있으니, 필요한 것만 보거나 Debug 모드에서 확인 권장)
+    for (int j = 1; j <= n; j++)
+    {
+        for (int l = 1; l <= r[j]; l++)
+        {
+            for (int h = 1; h <= n; h++)
+            {
+                for (int z = 1; z <= r[j]; z++)
+                {
+                    for (int i = 1; i <= m; i++)
+                    {
+                        double valX = cplex.GetValue(X_jlhzi[j][l][h][z][i]);
+                        if (valX > 0.5) // 1인 것으로 판단
+                        {
+                            Console.WriteLine(
+                                $"X_{j}_{l}_{h}_{z}_{i} = {valX}"
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+else
+{
+    Console.WriteLine("No feasible solution found. Status = " + cplex.GetStatus());
+}
+
+cplex.End();  // 자원 해제
+
         }
         catch (ILOG.Concert.Exception exc)
         {
