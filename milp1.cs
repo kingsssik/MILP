@@ -261,20 +261,97 @@ class Milp
                             }
                         }
 
-                        cpelx.AddLe( sumX_4, sumX_5 );
+                        cplex.AddLe( sumX_4, sumX_5 );
                     }
                 }
             }
 
 
             //(6)
+            for (int j = 1; j < n+1; j++)
+            {
+                for (int l = 1; l < r[j]+1; l++)
+                {
+                    if (l == 1)
+                    {
+                        continue;
+                    }
+                    INumExpr sum_6 = cplex.NumExpr();
+                    for (int h = 0; h < n+1; h++)
+                    {
+                        if (h == 0) continue;
+
+                        for (int z = 1; z < r[h]+1; z++)
+                        {
+                            for (int i = 1; i < m+1; i++)
+                            {
+                                INumExpr term = cplex.Prod(X_jlhzi[j][l][h][z][i],(p_jli[j][l][i] + S_jhi[j][h][i]));
+                                sum_6 = cplex.Sum(sum_6, term);
+                            }
+                        }
+                    }
+                    cplex.AddGe(C_jl[j][l],cplex.Sum(C_jl[j][l - 1], sum_6)
+                    );
+                }
+            }
+
+            //(7)
+            for (int j = 1; j <= n; j++)
+            {
+                for (int l = 1; l <= r[j]; l++)
+                {
+                    for (int h = 1; h <= n; h++)
+                    {
+                        for (int z = 1; z <= r[h]; z++)
+                        {
+                            INumExpr sumX_7 = cplex.NumExpr();
+
+                            INumExpr sumTime_7 = cplex.NumExpr();
+
+                            for (int i = 1; i <= m; i++)
+                            {
+                                sumX_7 = cplex.Sum(sumX_7, X_jlhzi[j][l][h][z][i]);
+
+                                INumExpr timeTerm = cplex.Prod(
+                                    X_jlhzi[j][l][h][z][i],
+                                    (p_jli[j][l][i] + S_jhi[j][h][i])
+                                );
+                                sumTime_7 = cplex.Sum(sumTime_7, timeTerm);
+                            }
+                            INumExpr bigMPart = cplex.Prod(M, cplex.Diff(1.0, sumX_7));
+
+                            INumExpr rhs_7 = cplex.Diff(
+                                cplex.Sum(C_jl[h][z], sumTime_7),
+                                bigMPart
+                            );
+                            cplex.AddGe(C_jl[j][l], rhs_7);
+                        }
+                    }
+                }
+            }
 
 
+            //(8)
+
+            for (int j = 1; j <= n; j++)
+            {
+                cplex.AddGe(
+                    T_j[j],
+                    cplex.Diff(C_jl[j][r[j]], d[j])
+                );
+            }
 
 
+            //(9)
+            for (int j = 1; j <= n; j++)
+            {
+                cplex.AddGe(T_j[j], 0.0);
 
-
-
+                for (int l = 1; l <= r[j]; l++)
+                {
+                    cplex.AddGe(C_jl[j][l], 0.0);
+                }
+            }
 
 
         }
