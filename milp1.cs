@@ -28,21 +28,21 @@ class Milp
             //decision value
 
             IIntVar[][][][][] X_jlhzi = new IIntVar[n][][][][];
-            for(int j = 0; j < n; j++)
+            for (int j = 0; j < n; j++)
             {
-                X_jlhzi[j] = new IIntVar[r[j+1]][][][];
-                for(int l = 0; l < r[j+1]; l++)
+                X_jlhzi[j] = new IIntVar[r[j + 1]][][][];
+                for (int l = 0; l < r[j + 1]; l++)
                 {
-                    X_jlhzi[j][l] = new IIntVar[n+1][][];
-                    for(int h = 0; h < n+1; h++)
+                    X_jlhzi[j][l] = new IIntVar[n + 1][][];
+                    for (int h = 0; h < n + 1; h++)
                     {
                         X_jlhzi[j][l][h] = new IIntVar[r[h]][];
-                        for(int z = 0; z < r[h]; z++)
+                        for (int z = 0; z < r[h]; z++)
                         {
                             X_jlhzi[j][l][h][z] = new IIntVar[m];
-                            for(int i = 0; i < m; i++)
+                            for (int i = 0; i < m; i++)
                             {
-                                X_jlhzi[j][l][h][z][i]= cplex.IntVar(0, 1, $"X_{j}_{l}_{h}_{z}_{i}");  
+                                X_jlhzi[j][l][h][z][i] = cplex.IntVar(0, 1, $"X_{j}_{l}_{h}_{z}_{i}");
                             }
                         }
                     }
@@ -50,18 +50,30 @@ class Milp
             }
 
 
-            INumVar[][] C_jl = new INumVar[n+1][];
-            for(int h = 0; h < n+1; h++)
+            INumVar[][] C_jl = new INumVar[n + 1][];
+            for (int h = 0; h < n + 1; h++)
             {
-                C_jl[h] = new INumVar[r[h]];
-                for(int z = 0 ;z < r[h]; z++)
+                C_jl[h] = new INumVar[r[h]+1];
+                for (int z = 0; z < r[h]+1; z++)
                 {
                     C_jl[h][z] = cplex.NumVar(0.0, M, NumVarType.Float, $"C_{h}_{z}");
                 }
             }
 
+
+            for (int j = 0; j < n + 1; j++)
+            {
+                cplex.AddEq(C_jl[j][0], 0.0);  // C_{j,0} = 0
+            }
+
+            // C0,1 = 0 설정
+            cplex.AddEq(C_jl[0][1], 0.0);  // C_{0,1} = 0
+
+
+
+
             INumVar[] T_j = new INumVar[n];
-            for(int j = 0; j < n; j++)
+            for (int j = 0; j < n; j++)
             {
                 T_j[j] = cplex.NumVar(0.0, M, NumVarType.Float, $"T_{j}");
             }
@@ -71,11 +83,11 @@ class Milp
             double[][][] p_jli = new double[n][][];
             for (int j = 0; j < n; j++)
             {
-                p_jli[j] = new double[r[j+1]][];
-                for(int l = 0; l < r[j+1]; l++)
+                p_jli[j] = new double[r[j + 1]][];
+                for (int l = 0; l < r[j + 1]; l++)
                 {
                     p_jli[j][l] = new double[m];
-                    for(int i = 0; i < m; i++)
+                    for (int i = 0; i < m; i++)
                     {
                         p_jli[j][l][i] = (Convert.ToDouble(rnd.Next(1000)) / 1000) * 10;
                     }
@@ -85,13 +97,13 @@ class Milp
 
             //e_jli
             double[][][] e_jli = new double[n][][];
-            for(int j = 0;j < n; j++)
+            for (int j = 0; j < n; j++)
             {
-                e_jli[j] = new double[r[j+1]][];
-                for(int l = 0;l < r[j+1]; l++)
+                e_jli[j] = new double[r[j + 1]][];
+                for (int l = 0; l < r[j + 1]; l++)
                 {
-                    e_jli[j][l] = new double [m];
-                    for(int i = 0;i < m; i++)
+                    e_jli[j][l] = new double[m];
+                    for (int i = 0; i < m; i++)
                     {
                         double a = (Convert.ToDouble(rnd.Next(1000)) / 1000) * 1;
 
@@ -109,17 +121,17 @@ class Milp
 
             //S_jhi
             double[][][] S_jhi = new double[n][][];
-            for(int j = 0; j < n; j++)
+            for (int j = 0; j < n; j++)
             {
-                S_jhi[j] = new double[n+1][];
-                for(int h = 0; h < n+1; h++)
+                S_jhi[j] = new double[n + 1][];
+                for (int h = 0; h < n + 1; h++)
                 {
-                    S_jhi[j][h] = new double [m];
+                    S_jhi[j][h] = new double[m];
                     for (int i = 0; i < m; i++)
                     {
                         S_jhi[j][h][i] = (Convert.ToDouble(rnd.Next(1000)) / 1000) * 6;
                     }
-                    
+
                 }
             }
 
@@ -135,16 +147,16 @@ class Milp
             //constraint
 
             //(1)
-            for(int j = 0; j < n; j++)
+            for (int j = 0; j < n; j++)
             {
-                for(int l = 0; l < r[j+1]; l++)
+                for (int l = 0; l < r[j + 1]; l++)
                 {
                     IIntExpr sumX = cplex.IntExpr();
-                    for(int h = 0; h < n+1; h++)
+                    for (int h = 0; h < n + 1; h++)
                     {
-                        for(int z = 0; z < r[h]; z++)
+                        for (int z = 0; z < r[h]; z++)
                         {
-                            for(int i = 0; i < m; i++)
+                            for (int i = 0; i < m; i++)
                             {
                                 sumX = cplex.Sum(sumX, X_jlhzi[j][l][h][z][i]);
                             }
@@ -156,16 +168,16 @@ class Milp
 
 
             //(2)
-            for(int j = 0; j < n; j++)
+            for (int j = 0; j < n; j++)
             {
-                for (int l = 0; l < r[j+1]; l++)
+                for (int l = 0; l < r[j + 1]; l++)
                 {
-                    for(int i = 0; i<m; i++)
+                    for (int i = 0; i < m; i++)
                     {
                         INumExpr sumX_1 = cplex.NumExpr();
-                        for(int h = 0; h < n+1; h++)
+                        for (int h = 0; h < n + 1; h++)
                         {
-                            for(int z = 0; z < r[h]; z++)
+                            for (int z = 0; z < r[h]; z++)
                             {
                                 sumX_1 = cplex.Sum(sumX_1, X_jlhzi[j][l][h][z][i]);
                             }
@@ -176,14 +188,14 @@ class Milp
             }
 
             //(3)
-            for (int h = 1; h < n+1; h++)
+            for (int h = 1; h < n + 1; h++)
             {
                 for (int z = 0; z < r[h]; z++)
                 {
                     INumExpr sumX_2 = cplex.NumExpr();
                     for (int j = 0; j < n; j++)
                     {
-                        for (int l = 0; l < r[j+1]; l++)
+                        for (int l = 0; l < r[j + 1]; l++)
                         {
                             for (int i = 0; i < m; i++) //오타? i=1 ---n까지??
                             {
@@ -202,7 +214,7 @@ class Milp
                 INumExpr sumX_3 = cplex.NumExpr();
                 for (int j = 0; j < n; j++)
                 {
-                    for (int l = 0; l < r[j+1]; l++)
+                    for (int l = 0; l < r[j + 1]; l++)
                     {
                         sumX_3 = cplex.Sum(sumX_3, X_jlhzi[j][l][0][0][i]);
                     }
@@ -210,62 +222,58 @@ class Milp
                 cplex.AddLe(sumX_3, 1.0);
             }
 
-            ////(5)
-            //for (int h = 1; h < n + 2; h++) //h는 n? n+1? 까지
-            //{
-            //    for (int z = 0; z < r[h-1]; z++)
-            //    {
-            //        for (int i = 0; i < m; m++)
-            //        {
-            //            IIntExpr sumX_4 = cplex.IntExpr();
+            //(5)
+            for (int h = 1; h < n + 1; h++) //h는 n? n+1? 까지
+            {
+                for (int z = 0; z < r[h]; z++)
+                {
+                    for (int i = 0; i < m; i++)
+                    {
+                        IIntExpr sumX_4 = cplex.IntExpr();
 
-            //            for (int j = 0; j < n; j++)
-            //            {
-            //                for (int l = 0; l < r[j + 1]; l++)
-            //                {
-            //                    sumX_4 = cplex.Sum(sumX_4, X_jlhzi[j][l][h][z][i]);
-            //                }
-            //            }
+                        for (int j = 0; j < n; j++)
+                        {
+                            for (int l = 0; l < r[j + 1]; l++)
+                            {
+                                sumX_4 = cplex.Sum(sumX_4, X_jlhzi[j][l][h][z][i]);
+                            }
+                        }
 
 
-            //            IIntExpr sumX_5 = cplex.IntExpr();
+                        IIntExpr sumX_5 = cplex.IntExpr();
 
-            //            for (int j = 0; j < n + 1; j++)
-            //            {
-            //                for (int l = 0; l < r[j]; l++)
-            //                {
-            //                    sumX_5 = cplex.Sum(sumX_5, X_jlhzi[h - 1][z][j][l][i]);
-            //                }
-            //            }
-
-            //            cplex.AddLe(sumX_4, sumX_5);
-            //        }
-            //    }
-            //}
+                        for (int j = 0; j < n; j++)
+                        {
+                            
+                            for (int l = 0; l < r[j]; l++)
+                            {
+                                sumX_5 = cplex.Sum(sumX_5, X_jlhzi[h - 1][z][j][l][i]);
+                            }
+                        }
+                        cplex.AddLe(sumX_4, sumX_5);
+                    }
+                }
+            }
 
 
             //(6)
             for (int j = 0; j < n; j++)
             {
-                for(int l = 0;l < r[j+1]; l++)
+                for (int l = 0; l < r[j+1]; l++)
                 {
-                    if (l == 0)
-                    {
-                        continue;
-                    }
                     INumExpr sum_6 = cplex.NumExpr();
-                    for(int h = 0; h < n + 1; h++)
+                    for (int h = 0; h < n + 1; h++)
                     {
-                        for(int z =0;  z < r[h]; z++)
+                        for (int z = 0; z < r[h]; z++)
                         {
-                            for(int i = 0; i < m; i++)
+                            for (int i = 0; i < m; i++)
                             {
                                 INumExpr term = cplex.Prod(X_jlhzi[j][l][h][z][i], (p_jli[j][l][i] + S_jhi[j][h][i]));
                                 sum_6 = cplex.Sum(sum_6, term);
                             }
                         }
                     }
-                    cplex.AddGe(C_jl[j][l], cplex.Sum(C_jl[j][l - 1], sum_6));
+                    cplex.AddGe(C_jl[j+1][l+1], cplex.Sum(C_jl[j+1][l], sum_6));
                 }
             }
 
@@ -302,11 +310,11 @@ class Milp
             for (int j = 0; j < n; j++)
             {
                 INumExpr sumC = cplex.NumExpr();
-                for (int l = 0; l < r[j+1]; l++)
+                for (int l = 0; l < r[j + 1]; l++)
                 {
                     cplex.AddGe(T_j[j], cplex.Sum(sumC, (-1.0) * d[j]));
                 }
-                
+
             }
 
 
@@ -316,7 +324,7 @@ class Milp
             {
                 cplex.AddGe(T_j[j], 0.0);
 
-                for (int l = 0; l < r[j+1]; l++)
+                for (int l = 0; l < r[j]+1; l++)
                 {
                     cplex.AddGe(C_jl[j][l], 0.0);
                 }
@@ -333,22 +341,28 @@ class Milp
                 Console.WriteLine("---------------------------------------------------");
 
                 // 예시: T_j, C_j,l 출력
-                for (int j = 0; j < n; j++)
+                for (int j = 0; j < n+1; j++)
                 {
-                    Console.WriteLine($"T_{j} = {cplex.GetValue(T_j[j])}");
-                    for (int l = 0; l < r[j+1]; l++)
+                    for (int l = 0; l < r[j]+1; l++)
                     {
                         Console.WriteLine($"   C_{j},{l} = {cplex.GetValue(C_jl[j][l])}");
                     }
                 }
 
+                for (int j = 0; j < n; j++)
+                {
+                    Console.WriteLine($"T_{j} = {cplex.GetValue(T_j[j])}");
+                }
+
+
+
                 // 예시: X_jlhzi 중 1인 것만 출력
                 // (실제로는 아주 많을 수 있으니, 필요한 것만 보거나 Debug 모드에서 확인 권장)
                 for (int j = 0; j < n; j++)
                 {
-                    for (int l = 0; l < r[j+1]; l++)
+                    for (int l = 0; l < r[j + 1]; l++)
                     {
-                        for (int h = 0; h < n+1; h++)
+                        for (int h = 0; h < n + 1; h++)
                         {
                             for (int z = 0; z < r[h]; z++)
                             {
